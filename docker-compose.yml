@@ -1,0 +1,8 @@
+version: '3.7'
+services:
+  driver:
+    image: strangesast/fanuc-minimal-example
+    network_mode: host
+    build:
+      context: .
+    command: fanuc_example 127.0.0.1 8193

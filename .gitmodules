@@ -1,0 +1,3 @@
+[submodule "external/fwlib"]
+	path = external/fwlib
+	url = https://github.com/strangesast/fwlib.git
