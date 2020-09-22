@@ -1,6 +1,7 @@
-from debian as builder
-ARG TARGETPLATFORM
-ARG BUILDPLATFORM
+arg image=debian
+from $image as builder
+arg TARGETPLATFORM
+arg BUILDPLATFORM
 
 run apt-get update && apt-get install -y \
   cmake \

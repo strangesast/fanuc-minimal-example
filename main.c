@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "./external/fwlib/fwlib32.h"
@@ -18,6 +19,7 @@ int main(int argc, char **argv) {
   int devicePort;
   short axisCount = MAX_AXIS;
   char deviceIP[40];
+  IODBPSD param = {0};
   ODBSYS sysinfo;
   ODBAXISNAME axes[MAX_AXIS];
 
@@ -56,6 +58,14 @@ int main(int argc, char **argv) {
 
   printf("Retrieved info from cnc! (axes: %d, series: %.4s)\n", axisCount,
          sysinfo.series);
+
+  if (cnc_rdparam(libh, 6711, -1, 8, &param) != EW_OK) {
+    fprintf(stderr, "Failed to get part count!\n");
+    exit(EXIT_FAILURE);
+    return 1;
+  }
+
+  printf("Part count (%d): %ld\n", param.datano, param.u.ldata);
 
   exit(EXIT_SUCCESS);
   return 0;

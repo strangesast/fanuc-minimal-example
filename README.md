@@ -17,5 +17,11 @@ OR
 - `make` (Run make, build the executable)  
 - `./fanuc_example` (Run the executable)  
 
+# Development
+Docker images for multiple platforms can be built with `buildx`:  
+```
+docker buildx build --platform=linux/386,linux/arm/v7 .
+```
+
 # Resources  
 [fwlib library documentation](https://www.inventcom.net/fanuc-focas-library/general/fwlib32 "fwlib")  
