@@ -1,27 +1,26 @@
-arg image=debian
-from $image as builder
+from debian:buster-slim as base
 arg TARGETPLATFORM
 arg BUILDPLATFORM
 
-run apt-get update && apt-get install -y \
-  cmake \
-  gcc \
-  g++ \
-  make \
-  unzip \
-  wget
+workdir /tmp
+copy deps.sh env.sh setup.sh external/fwlib/*.so.1.0.5 ./
+run . ./env.sh && ./setup.sh && ldconfig /lib
 
-copy setup.sh external/fwlib/*.so.1.0.5 /tmp/
-run /tmp/setup.sh && ldconfig /lib
+from base as builder
 
 workdir /usr/src/app
 
 copy . .
 
-run mkdir build && \
+run . ./env.sh && \
+  /tmp/deps.sh && \
+  echo ARCH $ARCH && \
+  mkdir build && \
   cd build && \
   cmake .. && \
-  make && \
-  make install
+  make
+#  make install
 
-cmd fanuc_example
+from base
+copy --from=builder /usr/src/app/build/fanuc_example /usr/local/bin/
+cmd ["fanuc_example", "localhost", "8193"]
