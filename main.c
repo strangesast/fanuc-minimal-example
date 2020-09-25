@@ -57,8 +57,16 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
     return 1;
   }
-  sprintf(cncID, "%08lx-%08lx-%08lx-%08lx", cncIDs[0], cncIDs[1], cncIDs[2],
-          cncIDs[3]);
+
+  if (sizeof(long) == 4) {
+    sprintf(cncID, "%08lx-%08lx-%08lx-%08lx", cncIDs[0] & 0xffffffff,
+            cncIDs[1] & 0xffffffff, cncIDs[2] & 0xffffffff,
+            cncIDs[3] & 0xffffffff);
+  } else {
+    sprintf(cncID, "%08lx-%08lx-%08lx-%08lx", cncIDs[0] & 0xffffffff,
+            cncIDs[0] >> 32 & 0xffffffff, cncIDs[1] & 0xffffffff,
+            cncIDs[1] >> 32 & 0xffffffff);
+  }
 
   printf("Retrieved info from cnc! (id: %s, axes: %d, series: %.4s)\n", cncID,
          axisCount, sysinfo.series);
