@@ -24,11 +24,11 @@ copy . .
 run . /tmp/env.sh && \
   mkdir build && \
   cd build && \
-  cmake .. && \
+  cmake -DCMAKE_BUILD_TYPE=Debug .. && \
   make
-# && \ make install
+# \ && make install
 
 # go back to lightish image. bring over compiled binary
 from base
-copy --from=builder /usr/src/app/build/fanuc_example /usr/local/bin/
+copy --from=builder /usr/src/app/build/bin/fanuc_example /usr/local/bin/
 cmd ["fanuc_example", "localhost", "8193"]
