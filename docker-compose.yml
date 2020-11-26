@@ -1,6 +1,12 @@
 version: '3.7'
 services:
+  fwlib:
+    image: strangesast/fwlib
+    build:
+      context: external/fwlib
   driver:
+    depends_on:
+      - fwlib
     image: strangesast/fanuc-minimal-example
     network_mode: host
     build:

@@ -1,32 +1,22 @@
-# start with lightish image.  need glibc for fwlib, otherwise would use alpine
-from debian:buster-slim as base
-# these vars used by buildx (not set if not declared)
-arg TARGETPLATFORM
-arg BUILDPLATFORM
-
-workdir /tmp
-# bring all (x64,x86,arm) so
-copy deps.sh env.sh setup.sh external/fwlib/*.so.1.0.5 ./
-# get dependencies, move so based on architecture
-run . ./env.sh && ./setup.sh && ldconfig /lib
+# start with multiplatform base image (x86/amd64/armv7/aarch64) with fwlib installed
+from strangesast/fwlib as base
 
 # add lots of stuff for compilation
 from base as builder
 
-workdir /usr/src/app
+# installs compiler, cmake, multilib for intel/arm
+copy external/fwlib/build-deps.sh /tmp/
+run /tmp/build-deps.sh
 
-# setup build dependencies
-run . /tmp/env.sh && /tmp/deps.sh
+workdir /usr/src/app
 
 copy . .
 
 # cmake, make
-run . /tmp/env.sh && \
-  mkdir build && \
+run mkdir build && \
   cd build && \
-  cmake -DCMAKE_BUILD_TYPE=Debug .. && \
+  cmake .. && \
   make
-# \ && make install
 
 # go back to lightish image. bring over compiled binary
 from base

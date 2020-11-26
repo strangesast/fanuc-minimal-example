@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.13.4)
 
 project(FanucExample LANGUAGES C VERSION 0.1)
 
+# for IDE
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_subdirectory(src)
 
 set_target_properties(fanuc_example
@@ -11,7 +14,6 @@ set_target_properties(fanuc_example
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-set(cmake_install_rpath "${CMAKE_INSTALL_PREFIX}/fwlib")
 install (TARGETS fanuc_example
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION bin

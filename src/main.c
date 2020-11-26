@@ -1,13 +1,13 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../external/fwlib/fwlib32.h"
+#include <string.h>
 
-#define TIMEOUT 10
+#include "../external/fwlib/fwlib32.h"
 
 short unsigned int libh;  // fwlib handle
 
-short rdparam(short num, IODBPSD *param) {
+int rdparam(short num, IODBPSD *param) {
   short ret;
   ret = cnc_rdparam(libh, num, ALL_AXES, sizeof(*param), param);
   if (ret != EW_OK) {
@@ -24,72 +24,77 @@ void cleanup() {
 }
 
 int main(int argc, char **argv) {
-  int devicePort = 8193; /* typical FOCAS port */
-  short axisCount = MAX_AXIS;
-  char deviceIP[40] = "127.0.0.1";
-  unsigned long cncIDs[4];
-  char cncID[36];
+  int device_port = 8193; /* typical FOCAS port */
+  char device_ip[40] = "127.0.0.1";
+  char cnc_id[36];
+  char axes_names[MAX_AXIS * 2] = "";
+  short axis_count = MAX_AXIS;
+  unsigned long cnc_ids[4];
   IODBPSD param = {0}; /* reset param result memory, not set */
-  ODBSYS sysinfo;
-  ODBAXISNAME axes[MAX_AXIS];
+  ODBSYS sysinfo = {0};
+  ODBAXISNAME axes[MAX_AXIS] = {{0}};
 
   if (argc < 2) {
     fprintf(stderr, "%% Usage: %s <ip> <port>\n", argv[0]);
-    exit(EXIT_FAILURE);
     return 1;
   }
   if (argc >= 3) {
-    sscanf(argv[2], "%d", &devicePort);
+    sscanf(argv[2], "%d", &device_port);
   }
-  sscanf(argv[1], "%s", deviceIP);
+  sscanf(argv[1], "%s", device_ip);
 
   if (cnc_startupprocess(0, "focas.log") != EW_OK) {
     fprintf(stderr, "Failed to create required log file!\n");
-    exit(EXIT_FAILURE);
     return 1;
   }
 
-  printf("Connecting to %s:%d\n", deviceIP, devicePort);
+  printf("Connecting to %s:%d\n", device_ip, device_port);
 
   // library handle.  needs to be closed when finished.
-  if (cnc_allclibhndl3(deviceIP, devicePort, TIMEOUT, &libh) != EW_OK) {
+  if (cnc_allclibhndl3(device_ip, device_port, 10 /* timeout */, &libh) !=
+      EW_OK) {
     fprintf(stderr, "Failed to connect to cnc!\n");
-    exit(EXIT_FAILURE);
     return 1;
   }
   atexit(cleanup);
 
   // get cnc information
+  // axis_count set by rdaxisname
   if (cnc_sysinfo(libh, &sysinfo) != EW_OK ||
-      cnc_rdcncid(libh, cncIDs) != EW_OK ||
-      cnc_rdaxisname(libh, &axisCount, axes) != EW_OK) {
+      cnc_rdcncid(libh, cnc_ids) != EW_OK ||
+      cnc_rdaxisname(libh, &axis_count, axes) != EW_OK) {
     fprintf(stderr, "Failed to get cnc info!\n");
-    exit(EXIT_FAILURE);
     return 1;
   }
 
 #if __SIZEOF_LONG__ == 8
-  sprintf(cncID, "%08lx-%08lx-%08lx-%08lx", cncIDs[0] & 0xffffffff,
-          cncIDs[0] >> 32 & 0xffffffff, cncIDs[1] & 0xffffffff,
-          cncIDs[1] >> 32 & 0xffffffff);
+  sprintf(cnc_id, "%08lx-%08lx-%08lx-%08lx", cnc_ids[0] & 0xffffffff,
+          cnc_ids[0] >> 32 & 0xffffffff, cnc_ids[1] & 0xffffffff,
+          cnc_ids[1] >> 32 & 0xffffffff);
 #else
-  sprintf(cncID, "%08lx-%08lx-%08lx-%08lx", cncIDs[0] & 0xffffffff,
-          cncIDs[1] & 0xffffffff, cncIDs[2] & 0xffffffff,
-          cncIDs[3] & 0xffffffff);
+  sprintf(cnc_id, "%08lx-%08lx-%08lx-%08lx", cnc_ids[0] & 0xffffffff,
+          cnc_ids[1] & 0xffffffff, cnc_ids[2] & 0xffffffff,
+          cnc_ids[3] & 0xffffffff);
 #endif
 
-  printf("Retrieved info from cnc! (id: %s, axes: %d, series: %.4s)\n", cncID,
-         axisCount, sysinfo.series);
+  // ','.join(cnc_ids)
+  char *j = axes_names;
+  for (int i = 0; i < axis_count; i++) {
+    if (i > 0) *(j++) = ',';
+    *(j++) = axes[i].name;
+  }
+  *j = '\0';
+
+  printf("Retrieved info from cnc!\nid: %s\naxes: %d (%s)\nseries: %.4s\n",
+         cnc_id, axis_count, axes_names, sysinfo.series);
 
   // read parameter (part count)
   if (rdparam(6711, &param)) {
     fprintf(stderr, "Failed to get part count!\n");
-    exit(EXIT_FAILURE);
     return 1;
   }
 
-  printf("Part count (%d): %ld\n", param.datano, param.u.ldata);
+  printf("part count (%d): %ld\n", param.datano, param.u.ldata);
 
-  exit(EXIT_SUCCESS);
   return 0;
 }
